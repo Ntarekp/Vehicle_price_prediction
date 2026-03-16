@@ -28,7 +28,5 @@ def evaluate_regression_model():
         "r2": r2,
         "comparison": comparison_df.head(10).to_html(
             classes="table table-bordered table-striped table-sm",
-            float_format="%.2f",
-            justify="center",
-        ),
+            float_format="%.2f", justify="center"),
     }

@@ -28,6 +28,5 @@ def evaluate_classification_model():
         "accuracy": accuracy,
         "comparison": comparison_df.head(10).to_html(
             classes="table table-bordered table-striped table-sm",
-            justify="center",
-        ),
+            justify="center"),
     }
