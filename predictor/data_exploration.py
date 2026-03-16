@@ -5,6 +5,46 @@ from folium import GeoJson, GeoJsonTooltip, GeoJsonPopup
 import branca.colormap as cm
 
 
+# ── Rwanda district → province lookup ────────────────────────────────────────
+DISTRICT_TO_PROVINCE = {
+    # Kigali City
+    "Gasabo":     "Kigali City",
+    "Kicukiro":   "Kigali City",
+    "Nyarugenge": "Kigali City",
+    # Northern Province
+    "Burera":   "Northern Province",
+    "Gakenke":  "Northern Province",
+    "Gicumbi":  "Northern Province",
+    "Musanze":  "Northern Province",
+    "Rulindo":  "Northern Province",
+    # Southern Province
+    "Gisagara":  "Southern Province",
+    "Huye":      "Southern Province",
+    "Kamonyi":   "Southern Province",
+    "Muhanga":   "Southern Province",
+    "Nyamagabe": "Southern Province",
+    "Nyanza":    "Southern Province",
+    "Nyaruguru": "Southern Province",
+    "Ruhango":   "Southern Province",
+    # Eastern Province
+    "Bugesera":  "Eastern Province",
+    "Gatsibo":   "Eastern Province",
+    "Kayonza":   "Eastern Province",
+    "Kirehe":    "Eastern Province",
+    "Ngoma":     "Eastern Province",
+    "Nyagatare": "Eastern Province",
+    "Rwamagana": "Eastern Province",
+    # Western Province
+    "Karongi":    "Western Province",
+    "Ngororero":  "Western Province",
+    "Nyabihu":    "Western Province",
+    "Nyamasheke": "Western Province",
+    "Rubavu":     "Western Province",
+    "Rutsiro":    "Western Province",
+    "Rusizi":     "Western Province",
+}
+
+
 def get_rwanda_map(df):
     district_counts = df["district"].value_counts().reset_index()
     district_counts.columns = ["district", "client_count"]
@@ -17,7 +57,8 @@ def get_rwanda_map(df):
         props = feature["properties"]
         name  = props.get("shapeName", "")
         props["district"]     = name
-        props["province"]     = props.get("shapeGroup", "")
+        # ✅ Fixed: derive province from the lookup table, not shapeGroup
+        props["province"]     = DISTRICT_TO_PROVINCE.get(name, "Unknown")
         props["client_count"] = int(count_lookup.get(name, 0))
 
     counts       = [f["properties"]["client_count"] for f in rwanda_geojson["features"]]
