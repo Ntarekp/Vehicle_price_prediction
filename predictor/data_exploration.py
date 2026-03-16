@@ -15,9 +15,9 @@ def get_rwanda_map(df):
 
     for feature in rwanda_geojson["features"]:
         props = feature["properties"]
-        name  = props.get("NAME_2", "")
+        name  = props.get("shapeName", "")
         props["district"]     = name
-        props["province"]     = props.get("NAME_1", "")
+        props["province"]     = props.get("shapeGroup", "")
         props["client_count"] = int(count_lookup.get(name, 0))
 
     counts       = [f["properties"]["client_count"] for f in rwanda_geojson["features"]]
