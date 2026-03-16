@@ -1,0 +1,11 @@
+django
+pandas
+numpy
+scikit-learn
+joblib
+folium
+branca
+geopandas
+matplotlib
+plotly
+requests

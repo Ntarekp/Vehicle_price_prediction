@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vehicle ML Dashboard - Clustering</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background: #f8f9fa; }
+    .sidebar { background: #fff; border-right: 1px solid #dee2e6; min-height: 100vh; position: sticky; top: 0; }
+    .nav-link { color: #495057; font-size: .875rem; border-radius: 6px; }
+    .nav-link:hover, .nav-link.active { background: #e9f0ff; color: #0d6efd; }
+    .card { border: 1px solid #dee2e6; border-radius: 8px; }
+    .card-header { background: #fff; font-weight: 600; font-size: .9rem; }
+    .table { font-size: .85rem; }
+    .table thead th { background: #f1f3f5; font-size: .78rem; font-weight: 600; color: #6c757d; border-bottom: 2px solid #dee2e6; }
+    .table td, .table th { padding: .65rem .9rem; vertical-align: middle; }
+    .table-striped tbody tr:nth-of-type(odd) { background: #f8f9fa; }
+    /* Metric tiles */
+    .metric-tile { background: #fff; border: 1px solid #dee2e6; border-radius: 8px; padding: 1.25rem 1.5rem; }
+    .metric-tile .label { font-size: .73rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: #6c757d; margin-bottom: .35rem; }
+    .metric-tile .value { font-size: 2rem; font-weight: 700; line-height: 1; }
+    .metric-tile .sub { font-size: .78rem; color: #6c757d; margin-top: .35rem; }
+    /* CV cell colours */
+    .cv-pass { background-color: #d1fae5 !important; font-weight: 600; }
+    .cv-fail { background-color: #fee2e2 !important; font-weight: 600; }
+  </style>
+</head>
+<body>
+<div class="container-fluid">
+  <div class="row">
+
+    <!-- Sidebar -->
+    <nav class="col-md-3 col-lg-2 sidebar p-3">
+      <div class="mb-4 ps-2 pt-2">
+        <h6 class="text-primary fw-bold mb-0">Vehicle ML</h6>
+        <small class="text-muted">Clustering Analysis</small>
+      </div>
+      <div class="nav flex-column nav-pills gap-1">
+        <a class="nav-link active" href="#clustering-analysis">Clustering Analysis</a>
+        <a class="nav-link" href="#model_metrics">Model Metrics</a>
+        <a class="nav-link" href="#cluster_cv">Cluster CV Scores</a>
+        <a class="nav-link" href="#cluster_summary">Cluster Summary</a>
+        <a class="nav-link" href="#comparison_analysis">Comparison Analysis</a>
+        <a class="nav-link" href="{% url 'data_exploration' %}">Exploratory Data Analysis</a>
+        <a class="nav-link" href="{% url 'regression_analysis' %}">Regression Analysis</a>
+        <a class="nav-link" href="{% url 'classification_analysis' %}">Classification Analysis</a>
+      </div>
+    </nav>
+
+    <!-- Main -->
+    <main class="col-md-9 col-lg-10 px-4 py-4">
+      <div class="mb-4">
+        <h4 class="fw-bold mb-1">Vehicle Insights Dashboard</h4>
+        <p class="text-muted mb-0" style="font-size:.875rem;">Clustering Analysis — Customer Segmentation</p>
+      </div>
+
+      <!-- Prediction form -->
+      <section id="clustering-analysis" class="mb-4">
+        <div class="row g-4">
+          <div class="col-lg-7">
+            <div class="card shadow-sm h-100">
+              <div class="card-header py-3 border-bottom">Input Specifications</div>
+              <div class="card-body p-4">
+                <form method="POST" action="">
+                  {% csrf_token %}
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <label class="form-label fw-semibold" style="font-size:.85rem;">Model Year</label>
+                      <input type="number" name="year" class="form-control" placeholder="e.g. 2022" required>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label fw-semibold" style="font-size:.85rem;">Kilometers Driven</label>
+                      <input type="number" step="any" name="km" class="form-control" placeholder="e.g. 15000" required>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label fw-semibold" style="font-size:.85rem;">Seats</label>
+                      <input type="number" name="seats" class="form-control" placeholder="e.g. 5" required>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label fw-semibold" style="font-size:.85rem;">Owner Annual Income</label>
+                      <input type="number" step="any" name="income" class="form-control" placeholder="e.g. 50000" required>
+                    </div>
+                    <div class="col-12 mt-3">
+                      <button type="submit" class="btn btn-primary w-100 fw-semibold py-2">Run Combined Inference</button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-5">
+            <div class="card shadow-sm h-100">
+              <div class="card-header py-3 border-bottom bg-dark text-white">Result</div>
+              <div class="card-body d-flex flex-column align-items-center justify-content-center text-center p-4">
+                {% if error %}
+                  <div class="alert alert-danger w-100 mb-0">{{ error }}</div>
+                {% elif price %}
+                  <div class="text-muted text-uppercase fw-semibold mb-1" style="font-size:.73rem;">Estimated Vehicle Price</div>
+                  <h2 class="display-5 fw-bold text-primary mb-3">${{ price|floatformat:2 }}</h2>
+                  <div class="text-muted text-uppercase fw-semibold mb-2" style="font-size:.73rem;">Customer Segment</div>
+                  <span class="badge bg-success px-4 py-2 fs-6 fw-semibold">{{ prediction }}</span>
+                {% else %}
+                  <p class="text-muted mb-0" style="font-size:.875rem;">Fill out the form to generate a prediction.</p>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Model Metrics -->
+      <section id="model_metrics" class="mb-4">
+        <div class="card shadow-sm">
+          <div class="card-header py-3 border-bottom d-flex justify-content-between align-items-center">
+            <span>Model Metrics</span>
+            <span class="text-muted" style="font-size:.8rem;">k = {{ evaluations.best_k }} clusters</span>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <div class="metric-tile">
+                  <div class="label">Silhouette Score</div>
+                  <div class="value {% if evaluations.refined_silhouette >= 0.9 %}text-success{% else %}text-warning{% endif %}">
+                    {{ evaluations.refined_silhouette }}
+                  </div>
+                  <div class="sub">
+                    {% if evaluations.refined_silhouette >= 0.9 %}Above 0.9 target{% else %}Below 0.9 target{% endif %}
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="metric-tile">
+                  <div class="label">CV Threshold</div>
+                  <div class="value {% if evaluations.cv_all_passed %}text-success{% else %}text-danger{% endif %}">
+                    &le; {{ evaluations.cv_threshold }}%
+                  </div>
+                  <div class="sub">
+                    {% if evaluations.cv_all_passed %}All clusters pass{% else %}Some clusters fail{% endif %}
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="metric-tile">
+                  <div class="label">IQR Clip — Income</div>
+                  <div class="value text-primary">{{ evaluations.best_mult_income }}</div>
+                  <div class="sub">Outlier multiplier</div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="metric-tile">
+                  <div class="label">IQR Clip — Price</div>
+                  <div class="value text-primary">{{ evaluations.best_mult_price }}</div>
+                  <div class="sub">Outlier multiplier</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Cluster CV Scores -->
+      <section id="cluster_cv" class="mb-4">
+        <div class="card shadow-sm">
+          <div class="card-header py-3 border-bottom d-flex justify-content-between align-items-center">
+            <span>Cluster CV Scores</span>
+            {% if evaluations.cv_all_passed %}
+              <span class="badge bg-success">All segments &le; {{ evaluations.cv_threshold }}%</span>
+            {% else %}
+              <span class="badge bg-danger">Some segments exceed {{ evaluations.cv_threshold }}%</span>
+            {% endif %}
+          </div>
+          <div class="card-body overflow-x-auto">
+            {{ evaluations.per_class_cv|safe }}
+          </div>
+        </div>
+      </section>
+
+      <!-- Cluster Summary -->
+      <section id="cluster_summary" class="mb-4">
+        <div class="card shadow-sm">
+          <div class="card-header py-3 border-bottom d-flex justify-content-between align-items-center">
+            <span>Cluster Summary</span>
+            <span class="text-muted" style="font-size:.8rem;">k = {{ evaluations.best_k }} &nbsp;|&nbsp; Silhouette = {{ evaluations.refined_silhouette }}</span>
+          </div>
+          <div class="card-body overflow-x-auto">
+            {{ evaluations.refined_summary|safe }}
+          </div>
+        </div>
+      </section>
+
+      <!-- Comparison Analysis -->
+      <section id="comparison_analysis" class="mb-4">
+        <div class="card shadow-sm">
+          <div class="card-header py-3 border-bottom">Comparison Analysis</div>
+          <div class="card-body overflow-x-auto">
+            {{ evaluations.comparison|safe }}
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  document.querySelectorAll("table td").forEach(function (td) {
+    const num = parseFloat(td.innerText.trim());
+    if (!isNaN(num) && td.innerText.includes(".") && num < 100) {
+      td.classList.add(num <= 15 ? "cv-pass" : "cv-fail");
+    }
+  });
+});
+</script>
+</body>
+</html>
