@@ -65,8 +65,8 @@ Price_prediction/
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/Divi-ne/Price_prediction.git
-cd Price_prediction
+git clone https://github.com/Ntarekp/Vehicle_price_prediction.git
+cd Vehicle_price_prediction
 ```
 
 ### 2. Create a virtual environment (recommended)
