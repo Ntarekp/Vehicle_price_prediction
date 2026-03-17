@@ -44,6 +44,9 @@ DISTRICT_TO_PROVINCE = {
     "Rusizi":     "Western Province",
 }
 
+# ── Plasma palette (shared by both colormaps) ─────────────────────────────────
+PLASMA_COLORS = ["#0d0887", "#6a00a8", "#b12a90", "#e16462", "#fca636", "#f0f921"]
+
 
 def get_rwanda_map(df):
     district_counts = df["district"].value_counts().reset_index()
@@ -57,7 +60,6 @@ def get_rwanda_map(df):
         props = feature["properties"]
         name  = props.get("shapeName", "")
         props["district"]     = name
-        # ✅ Fixed: derive province from the lookup table, not shapeGroup
         props["province"]     = DISTRICT_TO_PROVINCE.get(name, "Unknown")
         props["client_count"] = int(count_lookup.get(name, 0))
 
@@ -65,7 +67,7 @@ def get_rwanda_map(df):
     min_c, max_c = min(counts), max(counts)
 
     colormap = cm.LinearColormap(
-        colors=["#ffffb2", "#fecc5c", "#fd8d3c", "#f03b20", "#bd0026"],
+        colors=PLASMA_COLORS,
         vmin=min_c,
         vmax=max_c,
         caption="Number of Vehicle Clients per District",
@@ -121,7 +123,7 @@ def get_rwanda_map(df):
     ).add_to(m)
 
     step_map = cm.StepColormap(
-        colors=["#ffffb2", "#fecc5c", "#fd8d3c", "#f03b20", "#bd0026"],
+        colors=PLASMA_COLORS,
         vmin=min_c,
         vmax=max_c,
         caption="Number of Vehicle Clients per District",
